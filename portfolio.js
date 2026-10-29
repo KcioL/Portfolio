@@ -88,3 +88,41 @@ document.querySelectorAll('a[href^="#"]').forEach(ancre => {
         }
     });
 });
+
+/* --- STATISTIQUES (tableau de bord, voir suivi.js) ---
+   Compte les sections lues, les projets ouverts et les PDF téléchargés.
+   Rien de personnel n'est envoyé : seulement des compteurs. */
+const gestionStatistiques = () => {
+    const suivi = (fn) => { try { if (window.suivi) fn(window.suivi); } catch (e) { /* jamais bloquant */ } };
+    const dejaVu = new Set(); // chaque section ou projet n'est compté qu'une fois par visite de la page
+    const compterPage = (nom) => { if (dejaVu.has(nom)) return; dejaVu.add(nom); suivi((s) => s.page(nom)); };
+    // nom d'un PDF : « files/projet_vba.pdf » -> « projet-vba », « files/CV_2026.pdf » -> « cv »
+    const nomPdf = (href) => {
+        const f = (href || '').split('/').pop().replace(/\.pdf$/i, '').toLowerCase();
+        return f.startsWith('cv') ? 'cv' : f.replace(/_/g, '-');
+    };
+
+    // Sections lues : comptées quand elles sont à moitié visibles à l'écran
+    const sections = { home: 'accueil', about: 'a-propos', projects: 'projets', resume: 'cv', contact: 'contact' };
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entrees) => {
+            entrees.forEach((e) => { if (e.isIntersecting && sections[e.target.id]) compterPage(sections[e.target.id]); });
+        }, { threshold: 0.5 });
+        Object.keys(sections).forEach((id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+    }
+
+    // Projet ouvert (fenêtre de détail) : compté comme une page à son nom
+    document.querySelectorAll('.carte-projet').forEach((carte) => {
+        carte.addEventListener('click', (e) => {
+            if (e.target.closest('.bouton-pdf')) return;
+            const pdf = carte.querySelector('.bouton-pdf');
+            if (pdf) compterPage(nomPdf(pdf.getAttribute('href')));
+        });
+    });
+
+    // PDF téléchargés (projets et CV)
+    document.querySelectorAll('a[href$=".pdf"]').forEach((lien) => {
+        lien.addEventListener('click', () => suivi((s) => s.action('telechargements', nomPdf(lien.getAttribute('href')))));
+    });
+};
+gestionStatistiques();
