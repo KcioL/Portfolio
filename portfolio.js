@@ -122,7 +122,11 @@ const gestionStatistiques = () => {
 
     // PDF téléchargés (projets et CV)
     document.querySelectorAll('a[href$=".pdf"]').forEach((lien) => {
-        lien.addEventListener('click', () => suivi((s) => s.action('telechargements', nomPdf(lien.getAttribute('href')))));
+        lien.addEventListener('click', () => {
+            const nom = nomPdf(lien.getAttribute('href'));
+            compterPage(nom); // télécharger un projet, c'est aussi s'y intéresser : le projet compte comme vu
+            suivi((s) => s.action('telechargements', nom));
+        });
     });
 };
 gestionStatistiques();
