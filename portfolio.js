@@ -116,8 +116,19 @@ const gestionStatistiques = () => {
         carte.addEventListener('click', (e) => {
             if (e.target.closest('.bouton-pdf')) return;
             const pdf = carte.querySelector('.bouton-pdf');
-            if (pdf) compterPage(nomPdf(pdf.getAttribute('href')));
+            if (pdf) {
+                const nom = nomPdf(pdf.getAttribute('href'));
+                compterPage(nom);
+                // « Les plus consultés » du tableau de bord : le projet avec son titre
+                const titre = (carte.querySelector('h3, h4') || {}).textContent || nom;
+                suivi((s) => s.contenu('projet', nom, titre.trim()));
+            }
         });
+    });
+
+    // Boutons d'accueil « Voir mes projets » et « Me contacter »
+    document.querySelectorAll('.bouton-neon[href^="#"]').forEach((b) => {
+        b.addEventListener('click', () => suivi((s) => s.action(b.getAttribute('href') === '#contact' ? 'clic-contacter' : 'clic-voir-projets', 'accueil')));
     });
 
     // PDF téléchargés (projets et CV)
